@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, apiRequest } from "./client";
+import { apiRequest } from "./client";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -9,7 +9,7 @@ describe("apiRequest", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
       error: { code: "validation_error", message: "Invalid", request_id: "req-1", details: [] },
     }), { status: 422, headers: { "Content-Type": "application/json", "X-Request-ID": "req-1" } })));
-    await expect(apiRequest("/bad", { authenticate: false })).rejects.toMatchObject<ApiError>({
+    await expect(apiRequest("/bad", { authenticate: false })).rejects.toMatchObject({
       status: 422,
       error: { code: "validation_error", request_id: "req-1" },
     });
