@@ -109,11 +109,30 @@
 .glass-field:disabled, .glass-field[data-disabled] {
   background-color: #f6dbf708;
 }
+
+/* Keep editor popups inside the bounded mindmap surface. */
+.workspace-mindmap-editor {
+  position: relative;
+}
+.workspace-mindmap-editor .popup-layer.has-palette {
+  height: calc(100% - 134px);
+}
+.workspace-mindmap-editor .popup-layer.has-palette .palette-panel {
+  max-height: 100% !important;
+}
+@media (max-width: 700px) {
+  .workspace-mindmap-editor .popup-layer.has-palette {
+    height: calc(100% - 122px);
+  }
+}
 :is([data-slot="select-content"], [data-slot="combobox-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"]) {
   background-color: #21172bd9;
   border: 1px solid #f5d8f238;
   backdrop-filter: blur(28px) saturate(135%);
   box-shadow: 0 20px 60px #09061166;
+}
+:is([data-slot="select-item"], [data-slot="combobox-item"], [data-slot="dropdown-menu-item"], [data-slot="dropdown-menu-checkbox-item"], [data-slot="dropdown-menu-radio-item"], [data-slot="dropdown-menu-sub-trigger"]) {
+  min-height: 2rem;
 }
 :is([data-slot="select-scroll-up-button"], [data-slot="select-scroll-down-button"]) {
   background-color: #21172bd9;

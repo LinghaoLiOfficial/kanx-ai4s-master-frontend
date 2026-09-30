@@ -36,8 +36,12 @@ describe("knowledge theme", () => {
   });
 
   it("uses glass surfaces for reusable panels", () => {
-    render(<><Card>卡片</Card><Alert>提示</Alert><Button variant="secondary">次级操作</Button></>);
+    render(<><Card interactive>卡片</Card><Alert>提示</Alert><Button variant="secondary">次级操作</Button></>);
     expect(screen.getByText("卡片").className).toContain("glass-surface");
+    expect(screen.getByText("卡片").getAttribute("data-interactive")).toBe("true");
+    expect(screen.getByText("卡片").className).toContain("cursor-pointer");
+    expect(screen.getByText("卡片").className).toContain("hover:bg-primary/15!");
+    expect(screen.getByText("卡片").className).not.toContain("hover:-translate-y");
     expect(screen.getByRole("alert").className).toContain("glass-surface");
     expect(screen.getByRole("button", { name: "次级操作" }).className).toContain("glass-surface");
   });

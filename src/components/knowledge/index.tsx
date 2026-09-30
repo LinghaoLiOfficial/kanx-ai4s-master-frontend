@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { interactiveCardClassName } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 
@@ -34,7 +35,7 @@ export function DocumentRow({ document, onOpen, selected = false }: {
   document: KnowledgeDocument; onOpen: (id: string) => void; selected?: boolean;
 }) {
   return <button type="button" onClick={() => onOpen(document.id)}
-    className={cn("glass-surface group flex min-h-56 w-full flex-col rounded-md border p-4 text-left transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-primary/35 focus-visible:border-ring", selected && "brand-gradient-subtle border-primary/40")}>
+    className={cn("glass-surface group flex min-h-56 w-full flex-col rounded-md border p-4 text-left", interactiveCardClassName, selected && "brand-gradient-subtle border-primary/40")}>
     <span className="brand-gradient-soft flex size-10 shrink-0 items-center justify-center rounded-md border border-primary/20 text-pink-100"><FileText className="size-5" /></span>
     <span className="mt-5 min-w-0">
       <span className="block line-clamp-2 text-sm font-medium leading-5">{document.title}</span>

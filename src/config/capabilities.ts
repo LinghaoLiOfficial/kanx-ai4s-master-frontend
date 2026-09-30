@@ -1,5 +1,5 @@
 export const capabilities = {
-  auth: false,
+  auth: true,
   storage: false,
   aiTools: true,
   workflowTools: true,

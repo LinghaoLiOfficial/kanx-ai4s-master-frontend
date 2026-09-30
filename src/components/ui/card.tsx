@@ -1,17 +1,25 @@
 import * as React from "react"
 import { cn } from "cn"
 
+const interactiveCardClassName = "cursor-pointer transition-[border-color,background-color,box-shadow] hover:border-primary/60! hover:bg-primary/15! hover:shadow-[0_20px_60px_#09061166]! has-[:focus-visible]:border-ring! has-[:focus-visible]:bg-primary/15!"
+
 function Card({
   className,
   size = "default",
+  interactive = false,
   ...props
-}: React.ComponentProps<"div"> & { size?: "default" | "sm" }) {
+}: React.ComponentProps<"div"> & {
+  size?: "default" | "sm"
+  interactive?: boolean
+}) {
   return (
     <div
       data-slot="card"
       data-size={size}
+      data-interactive={interactive || undefined}
       className={cn(
         "glass-surface group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-lg border py-(--card-spacing) text-sm text-card-foreground [--card-spacing:--spacing(4)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(3)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-lg *:[img:last-child]:rounded-b-lg",
+        interactive && interactiveCardClassName,
         className
       )}
       {...props}
@@ -99,4 +107,5 @@ export {
   CardAction,
   CardDescription,
   CardContent,
+  interactiveCardClassName,
 }

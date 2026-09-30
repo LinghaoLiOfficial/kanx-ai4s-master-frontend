@@ -23,6 +23,26 @@ type Options = Omit<RequestInit, "body"> & {
 let accessToken: string | null = null;
 let refreshPromise: Promise<string | null> | null = null;
 
+export type AuthUser = {
+  id: string;
+  email: string;
+  display_name: string;
+  email_verified: boolean;
+};
+
+export type WorkspaceFileType = "mindmap" | "markdown";
+export type WorkspaceFile = { id: string; name: string; type: WorkspaceFileType; content: unknown | null; created_at: string; updated_at: string };
+export type UserContext = { user: AuthUser; organizations: { id: string; name: string; slug: string; permissions: string[] }[] };
+export type WorkspaceFilePage = { items: WorkspaceFile[]; page: number; page_size: number; total: number; total_pages: number };
+
+export type MessageResponse = { message: string };
+
+export type TokenResponse = {
+  access_token: string;
+  token_type: "bearer";
+  expires_in: number;
+};
+
 export function setAccessToken(token: string | null) {
   accessToken = token;
 }
@@ -94,12 +114,48 @@ export async function apiRequest<T>(path: string, options: Options = {}): Promis
 }
 
 export async function signIn(email: string, password: string) {
-  const result = await apiRequest<{ access_token: string; expires_in: number }>("/auth/login", {
+  const result = await apiRequest<TokenResponse>("/auth/login", {
     method: "POST", body: { email, password }, authenticate: false,
   });
   setAccessToken(result.access_token);
   return result;
 }
+
+export async function signUp(email: string, password: string, displayName: string) {
+  return apiRequest<MessageResponse>("/auth/register", {
+    method: "POST",
+    body: { email, password, display_name: displayName },
+    authenticate: false,
+  });
+}
+
+export async function verifyEmail(token: string) {
+  return apiRequest<MessageResponse>("/auth/verify-email", {
+    method: "POST", body: { token }, authenticate: false,
+  });
+}
+
+export async function resendVerification(email: string) {
+  return apiRequest<MessageResponse>("/auth/resend-verification", {
+    method: "POST", body: { email }, authenticate: false,
+  });
+}
+
+export async function getCurrentUser() {
+  return apiRequest<AuthUser>("/users/me");
+}
+
+export async function getUserContext() { return apiRequest<UserContext>("/users/me/context"); }
+function workspacePath(organizationId: string, suffix = "") { return `/organizations/${encodeURIComponent(organizationId)}/workspace-files${suffix}`; }
+export async function listWorkspaceFiles(organizationId: string, params: { page?: number; page_size?: number; query?: string; type?: WorkspaceFileType } = {}) {
+  const search = new URLSearchParams(); Object.entries(params).forEach(([key, value]) => { if (value) search.set(key, String(value)); });
+  return apiRequest<WorkspaceFilePage>(`${workspacePath(organizationId)}?${search}`);
+}
+export async function createWorkspaceFile(organizationId: string, body: { name: string; type: WorkspaceFileType }) { return apiRequest<WorkspaceFile>(workspacePath(organizationId), { method: "POST", body }); }
+export async function renameWorkspaceFile(organizationId: string, fileId: string, name: string) { return apiRequest<WorkspaceFile>(workspacePath(organizationId, `/${fileId}`), { method: "PATCH", body: { name } }); }
+export async function deleteWorkspaceFile(organizationId: string, fileId: string) { return apiRequest<null>(workspacePath(organizationId, `/${fileId}`), { method: "DELETE" }); }
+export async function getWorkspaceFile(organizationId: string, fileId: string) { return apiRequest<WorkspaceFile>(workspacePath(organizationId, `/${fileId}`)); }
+export async function saveWorkspaceFileContent(organizationId: string, fileId: string, content: unknown) { return apiRequest<WorkspaceFile>(workspacePath(organizationId, `/${fileId}`), { method: "PATCH", body: { content } as Record<string, unknown> }); }
 
 export async function signOut() {
   const csrf = readCookie("csrf_token");

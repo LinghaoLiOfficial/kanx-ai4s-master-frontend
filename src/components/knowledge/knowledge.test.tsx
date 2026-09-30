@@ -35,6 +35,9 @@ describe("knowledge components", () => {
     render(<DocumentRow document={{ id: "doc-1", title: "设计原则", summary: "摘要", collection: "研究", updatedAt: "今天", tags: ["AI"] }} onOpen={onOpen} />);
     const documentCard = screen.getByRole("button", { name: /设计原则/ });
     expect(documentCard.className).toContain("flex-col");
+    expect(documentCard.className).toContain("cursor-pointer");
+    expect(documentCard.className).toContain("hover:bg-primary/15!");
+    expect(documentCard.className).not.toContain("hover:-translate-y");
     expect(documentCard.textContent).toContain("研究");
     expect(documentCard.textContent).toContain("今天");
     await userEvent.click(documentCard);
