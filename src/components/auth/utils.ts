@@ -26,5 +26,5 @@ export function authErrorMessage(error: unknown) {
 }
 
 export function safeNextPath(value: string | null) {
-  return value?.startsWith("/") && !value.startsWith("//") ? value : "/workspace";
+  return value?.startsWith("/") && !value.startsWith("//") ? value : "/workspace/files";
 }

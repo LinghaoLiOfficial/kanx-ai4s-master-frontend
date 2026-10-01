@@ -24,7 +24,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => { getCurrentUser().then(() => router.replace("/workspace")).catch(() => undefined); }, [router]);
+  useEffect(() => { getCurrentUser().then(() => router.replace("/workspace/files")).catch(() => undefined); }, [router]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();

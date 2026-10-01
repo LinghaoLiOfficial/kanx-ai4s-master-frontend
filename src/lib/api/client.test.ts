@@ -16,12 +16,36 @@ import {
   signOut,
   signUp,
   verifyEmail,
+  createGroup,
+  listNotifications,
+  respondInvitation,
 } from "./client";
 
 afterEach(() => {
   setAccessToken(null);
   document.cookie = "csrf_token=; Max-Age=0; path=/";
   vi.unstubAllGlobals();
+});
+
+describe("collaboration API", () => {
+  it("creates groups and responds to invitations", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: "group-1" }), { status: 201 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "accepted" }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    await createGroup("Research");
+    await respondInvitation("token/value", "accept");
+    expect(new URL(String(fetchMock.mock.calls[0][0])).pathname).toBe("/groups");
+    expect(fetchMock.mock.calls[0][1]?.body).toBe(JSON.stringify({ name: "Research" }));
+    expect(new URL(String(fetchMock.mock.calls[1][0])).pathname).toBe("/invitations/token%2Fvalue/accept");
+  });
+
+  it("requests unread notifications", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({ items: [], unread_count: 0 }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    await listNotifications({ unread_only: true });
+    expect(new URL(String(fetchMock.mock.calls[0][0])).searchParams.get("unread_only")).toBe("true");
+  });
 });
 
 describe("apiRequest", () => {

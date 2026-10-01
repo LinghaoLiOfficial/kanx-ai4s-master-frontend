@@ -16,7 +16,8 @@
 - `src/components/knowledge/`: 知识组件及测试。
 - `src/components/auth/`: 认证页面外壳、密码输入和错误映射。
 - `src/lib/api/client.ts`: 后端请求、401 刷新、登录注册及退出逻辑。
-- `src/app/workspace/page.tsx`: 工作区文件管理、搜索、类型筛选、分页及文件操作。
+- `src/app/workspace/files/page.tsx`: 个人文件管理、搜索、类型筛选、分页及文件操作；正式入口为 `/workspace/files`。
+- `src/app/workspace/page.tsx`: 旧 `/workspace` 入口的兼容重定向。
 - `src/app/workspace/files/[fileId]/page.tsx`: Mindmap 编辑器、v2 JSON 转换与 800ms 自动保存。
 
 ## Setup and Runbook
@@ -39,15 +40,31 @@
 
 展厅当前提供 6 条本地知识文件示例，分别覆盖研究笔记、产品资料和灵感存档，供网格、搜索与标签筛选演示使用。
 
-认证以前端适配后端为原则：注册密码至少 12 位，注册与重新发送验证使用通用响应；登录响应只包含 token 元数据，当前用户固定读取 `GET /users/me` 的 `id`、`email`、`display_name`、`email_verified`。登录默认进入 `/workspace`，并允许安全的站内 `next` 路径。
+认证以前端适配后端为原则：注册密码至少 12 位，注册与重新发送验证使用通用响应；登录响应只包含 token 元数据，当前用户固定读取 `GET /users/me` 的 `id`、`email`、`display_name`、`email_verified`。登录默认进入 `/workspace/files`，并允许安全的站内 `next` 路径。
 
 工作区文件属于 `/users/me/context` 返回的第一个个人组织。支持 `mindmap` 和 `markdown`；Markdown 首版仅允许创建、重命名和删除。新建文件后停留在列表并刷新数据；侧栏只保留导航，创建入口位于页面工具栏；文件卡片通过通用 `Card interactive` 状态提供指针、悬浮高亮和整卡打开能力，交互态使用重要性规则覆盖 `.glass-surface` 的基础表面样式，并仅改变边框、背景和阴影，不产生位置移动，菜单按钮保持独立交互。桌面宽屏文件网格使用四列，更新时间显示到分钟。Mindmap 使用 `kanx-mindmap@0.1.0-rc.1`，通过 `parseDocument`/`serializeDocument` 与后端 v2 JSON 文档互转，变更防抖 800ms 保存并显示状态；编辑器内部标题为“Mindmap 编辑器”，外层文件标题下显示文件类型 `Mindmap`。
+
+左侧导航分组标题使用“知识空间”，其下聚合个人文件、群组管理和消息列表。该名称延续产品的知识管理定位，覆盖范围比“知识库”更宽，也比“工作台”更有产品辨识度；顶部品牌栏的 `ATLAS / Workspace` 与路由、内部技术命名保持不变。个人文件页面与群组、通知页面共用 `WorkspaceShell`，以保持模块切换时页面外壳和导航布局一致。
+
+个人文件搜索加载时保留已有网格并使用覆盖式加载状态，接口响应通过请求序号丢弃过期结果，以避免快速输入导致卡片网格抖动或结果回退。
+
+群组详情的“邀请成员”搜索支持单字符查询；前端空查询不发请求，后端 `/users/search` 的 `q` 参数最小长度为 1。
+
+文件卡片网格使用内容自适应行高，不使用 `auto-rows-fr` 拉伸同一行卡片；群组角色内部值仍为 `owner/admin/member`，界面统一显示为“所有者/管理员/成员”。
+
+个人文件页的工作区内容区使用视口剩余高度，文件面板通过 flex 填充空间，文件网格在面板内部滚动并保留底部间距，避免文件数量增加时撑开整个页面。
+
+`WorkspaceShell` 使用 `h-screen flex-col`，Header 以下容器和主内容区均使用 `flex-1 min-h-0`，为需要填充视口的子页面提供确定的高度约束。
+
+弹窗与侧滑面板的关闭控件统一使用中文“关闭”；DialogFooter 的默认关闭按钮及 Dialog/Sheet 右上角关闭图标的无障碍文本均在基础组件层维护。
 
 工作区 Mindmap 通过 `workspace-mindmap-editor` 为编辑器根节点建立 `position: relative` 定位上下文，并让配色弹层父级使用编辑器内的确定高度；面板自身保持 `max-height: 100%`，由 `.palette-options` 在内容超出时提供内部滚动，避免组件高度小于视口时弹层溢出页面。该覆盖样式位于 `src/app/globals.css`，不要直接修改 `node_modules/kanx-mindmap`。
 
 Mindmap 页面关闭或路由离开时由 React 卸载 `MindMapEditor`。`kanx-mindmap` 通过 effect cleanup 移除全局键盘、指针和粘贴监听，注销 viewport，清除持久化 timer 并取消 store 订阅；组件 API 未提供 `destroy`/`dispose` 实例方法。页面自身只清理自动保存 debounce timer，已经发出的加载或保存请求仍可能继续完成。
 
 ## Known Issues and Follow-ups
+
+群组协作页面位于 `/workspace/groups`、`/workspace/groups/[groupId]`、`/workspace/invitations/[token]` 和 `/workspace/notifications`；共享导航在 `src/components/workspace/shell.tsx`，侧栏固定显示“知识空间”分组标题，消息未读数每 30 秒轮询。个人文件与群组文件通过组织 `kind` 和显式 organization ID 区分。
 
 内置浏览器连接目前可能返回 `unsupported Codex auth method: apikey`；已运行的 Chrome 窗口可用于实际 UI 检查。当前工作区含先前未提交的组件及 `next-env.d.ts` 改动，勿覆盖。
 

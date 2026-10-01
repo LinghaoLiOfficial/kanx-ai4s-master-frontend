@@ -147,3 +147,87 @@
 - Result: 对组件卸载和内部监听清理而言实现正确；对关闭时最后一次编辑的保存、进行中请求取消而言不完整，因此不能称为完全健壮的关闭流程。
 - Verification: 静态源码和行号复核，未运行测试。
 - Follow-ups: 可补充关闭前 flush 最新内容，并用 `AbortController` 取消加载/保存请求。
+## 2026-09-30 21:05 +08 - 新增群组管理与消息中心
+
+- Request: 实现群组权限、邀请、通知和群组文件空间。
+- Actions: 新增群组列表/详情、邀请确认、消息列表、共享工作区导航、API client 和未读轮询。
+- Result: 支持 owner/admin/member 权限界面、用户邀请与一次性链接、通知已读/删除、成员管理和群组文件 CRUD。
+- Verification: `pnpm test` 20 项、`pnpm lint`、`pnpm exec tsc --noEmit`、`pnpm build` 通过；开发服务正常响应。
+
+## 2026-10-01 13:20 +08 - 评估左侧导航分组命名
+
+- Request: 评估左侧导航栏“工作空间”是否需要更换名称，并提出合适方案。
+- Actions: 检查 `src/components/workspace/shell.tsx`、`src/app/workspace/page.tsx` 及认证和知识管理相关文案，核对导航实际包含的功能范围。
+- Result: 推荐将分组标题改为“知识空间”。该名称比“工作空间”更贴合 ATLAS 的知识管理定位，同时能覆盖个人文件、群组协作和消息入口；不建议使用“知识库”（范围偏窄）或“工作台”（产品辨识度偏低）。本次仅完成评估，未修改界面文案。
+- Verification: 静态源码与产品文案检查，未运行测试。
+- Follow-ups: 若确认采用，修改工作区页面侧栏分组标题，并同步登录、验证页及品牌栏中仍需保留或替换的 `Workspace` 文案。
+
+## 2026-10-01 13:25 +08 - 修改左侧导航分组名称
+
+- Request: 将左侧导航栏中的“工作空间”更换为评估后的名称。
+- Actions: 修改 `src/app/workspace/page.tsx` 的侧栏分组标题为“知识空间”，保留顶部品牌栏、路由和内部技术命名不变。
+- Result: 工作区页面左侧导航现在显示“知识空间”，个人文件、群组管理和消息列表入口不变。
+- Verification: `git diff --check`、`pnpm lint`。
+
+## 2026-10-01 13:35 +08 - 修复导航分组标题跨页面消失
+
+- Request: 修复进入“群组管理”或“消息列表”后左侧“知识空间”标题消失的问题。
+- Actions: 在共享 `src/components/workspace/shell.tsx` 侧栏中加入“知识空间”分组标题，并保持工作区首页现有侧栏标题不变。
+- Result: 个人文件、群组管理和消息列表页面均显示统一的“知识空间”标题。
+- Verification: `git diff --check`、`pnpm lint` 通过。
+
+## 2026-10-01 13:50 +08 - 将个人文件入口迁移到 `/workspace/files`
+
+- Request: 将“个人文件”模块从 `/workspace` 改为 `/workspace/files`。
+- Actions: 新增 `src/app/workspace/files/page.tsx` 承载个人文件页面；将 `/workspace` 改为兼容重定向；同步导航、登录后默认跳转、认证 fallback、文件编辑器返回和错误跳转链接。
+- Result: `/workspace/files` 成为个人文件正式入口，旧 `/workspace` 访问会自动跳转，个人文件导航在文件编辑器子路由下保持激活。
+- Verification: `pnpm lint`、`pnpm test`（20 项）、`pnpm exec tsc --noEmit`、`pnpm build`、`git diff --check`。
+
+## 2026-10-01 14:00 +08 - 将弹窗关闭文案本地化
+
+- Request: 将弹窗关闭按钮的英文“Close”改为中文“关闭”。
+- Actions: 修改 `src/components/ui/dialog.tsx` 的 DialogFooter 默认按钮和弹窗关闭图标无障碍文本；同步修改 `src/components/ui/sheet.tsx` 的关闭图标无障碍文本。
+- Result: 所有复用统一 DialogFooter 的弹窗关闭按钮显示“关闭”，相关关闭控件的可访问名称也已中文化。
+- Verification: `pnpm lint`、`pnpm test`（20 项）、`git diff --check` 通过。
+
+## 2026-10-01 14:10 +08 - 统一模块切换时的页面外壳
+
+- Request: 修复从“消息列表”或“群组管理”切换到“个人文件”时页面明显抖动的问题。
+- Actions: 让 `/workspace/files` 复用 `WorkspaceShell` 的 Header、侧栏与主内容容器；保留共享布局下的内容区加载状态，移除个人文件页重复的独立 Header 和侧栏。
+- Result: 三个主模块切换时使用一致的页面外壳和容器间距，避免外层布局重新排布。
+- Verification: `pnpm lint`、`pnpm test`（20 项）、`pnpm exec tsc --noEmit`、`git diff --check` 通过；lint 初次检查发现并已移除 2 个未使用导入。
+
+## 2026-10-01 14:20 +08 - 稳定个人文件搜索网格
+
+- Request: 修复个人文件搜索后多文件卡片网格明显抖动的问题。
+- Actions: 搜索请求增加递增请求标识，忽略过期响应；搜索加载期间保留当前卡片网格，仅通过透明度和居中加载指示器反馈状态；为结果区域保留稳定的最小高度。
+- Result: 输入搜索条件时不再卸载并重新挂载整个网格，快速输入也不会被较早的接口响应覆盖。
+- Verification: `pnpm lint`、`pnpm test`（20 项）、`pnpm exec tsc --noEmit`、`git diff --check` 通过。
+
+## 2026-10-01 15:00 +08 - 让个人文件面板填充并内部滚动
+
+- Request: 让“我的文件”面板填满可用高度，同时保留底部间距，文件超出面板高度时在内部滚动。
+- Actions: 将共享工作区内容区设置为视口剩余高度；个人文件页面改为纵向 flex 布局，文件面板填充剩余空间，文件网格区域使用内部纵向滚动并保留底部内边距。
+- Result: 文件较少时面板填满可用区域，文件较多时只滚动文件列表，不撑开整页。
+- Verification: `pnpm lint`、`pnpm test`（20 项）、`pnpm exec tsc --noEmit`、`git diff --check` 通过。
+
+## 2026-10-01 15:15 +08 - 修正工作区视口高度约束
+
+- Request: 修复个人文件面板未实际填满视口剩余高度的问题。
+- Actions: 将 `WorkspaceShell` 改为明确的 `h-screen` 垂直 flex 布局，Header 以下容器使用 `flex-1 min-h-0`，主内容区设置为 flex 列布局并允许滚动。
+- Result: 子页面可以获得确定的剩余高度，个人文件页的 flex 面板能够真正填充 Header 下方区域，列表超出时在内部滚动。
+- Verification: 待运行 `pnpm lint`、`pnpm test`、`pnpm exec tsc --noEmit`、`git diff --check`。
+
+## 2026-10-01 14:30 +08 - 支持单字符邀请成员搜索
+
+- Request: 将“邀请成员”搜索框调整为输入 1 个字符即可搜索。
+- Actions: 将群组详情页前端搜索阈值和提示改为 1 个字符，并同步后端 `/users/search` 查询参数最小长度；增加后端路由契约测试。
+- Result: 输入任意单字符即可触发用户搜索，空查询不会请求接口，旧请求结果在组件卸载或查询变化后不会覆盖当前结果。
+- Verification: 后端协作契约测试 4 项通过；前端 lint 初次发现并修复 1 个 effect 规则问题，完整前端检查待最终重跑。
+
+## 2026-10-01 14:45 +08 - 优化文件卡片高度与权限中文显示
+
+- Request: 缩小“我的文件”卡片高度，并将群组管理中的权限名称显示为中文。
+- Actions: 移除文件网格的 `auto-rows-fr` 和固定最小行高，让卡片按内容自然布局；新增 owner/admin/member 到“所有者/管理员/成员”的前端显示映射，覆盖群组列表、群组详情徽标、成员权限选择和成员徽标。
+- Result: 文件卡片不再被网格行高拉伸；权限值以中文呈现，后端保存值和权限判断保持不变。
+- Verification: 待运行 `pnpm lint`、`pnpm test`、`pnpm exec tsc --noEmit`、`git diff --check`。
