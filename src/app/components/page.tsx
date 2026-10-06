@@ -33,6 +33,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ContributionCalendar, type ContributionData } from "@/components/contribution-calendar";
 import { CitationItem, CollectionNav, DocumentRow, KnowledgeEmpty, KnowledgeSearch, KnowledgeStat, MetadataPanel, TagPicker, type KnowledgeDocument } from "@/components/knowledge";
 
 const collections = [
@@ -49,17 +50,31 @@ const documents: KnowledgeDocument[] = [
   { id: "5", title: "知识助手交互规范", summary: "定义问答、引用展开与结果反馈的核心交互模式。", collection: "产品资料", updatedAt: "上周", tags: ["AI", "产品"], initials: "SY" },
   { id: "6", title: "团队知识流转灵感", summary: "记录从个人捕获到团队沉淀的轻量协作工作流。", collection: "灵感存档", updatedAt: "2 周前", tags: ["设计", "研究"], initials: "HW" },
 ];
+const contributionData: ContributionData = [2024, 2025, 2026].reduce<ContributionData>((result, year) => {
+  const totalDays = (new Date(year + 1, 0, 1).getTime() - new Date(year, 0, 1).getTime()) / 86400000;
+  for (let index = 0; index < totalDays; index += 1) {
+    const wave = (index * 17 + year) % 23;
+    const count = index % 47 === 0 ? 32 : wave < 5 ? ((index * 11 + year) % 16) + 1 : wave === 8 ? 22 : 0;
+    if (count) {
+      const date = new Date(year, 0, index + 1);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      result[key] = count;
+    }
+  }
+  return result;
+}, {});
 const sections = [
   { id: "overview", label: "设计概览", number: "01" },
   { id: "knowledge", label: "知识组件", number: "02" },
   { id: "inputs", label: "输入与选择", number: "03" },
   { id: "navigation", label: "导航与数据", number: "04" },
-  { id: "feedback", label: "反馈与浮层", number: "05" },
+  { id: "activity", label: "贡献日历", number: "05" },
+  { id: "feedback", label: "反馈与浮层", number: "06" },
 ];
 
 function Section({ id, number, title, children }: { id: string; number: string; title: string; children: React.ReactNode }) {
   return <section id={id} className="gallery-section border-t border-white/10 py-10 sm:py-14">
-    <div className="mb-8 flex items-baseline gap-5"><span className="text-xs text-pink-200/70">{number} / 05</span><h2 className="text-xl font-semibold sm:text-2xl">{title}</h2></div>
+    <div className="mb-8 flex items-baseline gap-5"><span className="text-xs text-pink-200/70">{number} / {sections.length.toString().padStart(2, "0")}</span><h2 className="text-xl font-semibold sm:text-2xl">{title}</h2></div>
     {children}
   </section>;
 }
@@ -76,6 +91,7 @@ export default function ComponentsPage() {
   const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [documentName, setDocumentName] = useState("");
+  const [contributionYear, setContributionYear] = useState(2026);
   const filtered = useMemo(() => documents.filter((item) =>
     (collection === "all" || (collection === "research" && item.collection === "研究笔记") || (collection === "product" && item.collection === "产品资料") || (collection === "archive" && item.collection === "灵感存档")) &&
     (!tags.length || tags.some((tag) => item.tags.includes(tag))) &&
@@ -141,7 +157,11 @@ export default function ComponentsPage() {
             <Demo title="表格 · 分页"><div className="glass-surface overflow-x-auto rounded-md border"><Table><TableHeader><TableRow><TableHead>文档</TableHead><TableHead>集合</TableHead><TableHead>标签</TableHead><TableHead className="text-right">更新</TableHead></TableRow></TableHeader><TableBody>{documents.slice(page - 1, page).map((item) => <TableRow key={item.id}><TableCell className="font-medium">{item.title}</TableCell><TableCell>{item.collection}</TableCell><TableCell>{item.tags.join(" / ")}</TableCell><TableCell className="text-right">{item.updatedAt}</TableCell></TableRow>)}</TableBody></Table></div><Pagination className="mt-4"><PaginationContent><PaginationItem><PaginationPrevious href="#navigation" text="上一页" aria-disabled={page === 1} className={page === 1 ? "pointer-events-none opacity-40" : ""} onClick={() => setPage(Math.max(1, page - 1))} /></PaginationItem>{[1, 2, 3].map((number) => <PaginationItem key={number}><PaginationLink href="#navigation" isActive={page === number} onClick={() => setPage(number)}>{number}</PaginationLink></PaginationItem>)}<PaginationItem><PaginationNext href="#navigation" text="下一页" aria-disabled={page === 3} className={page === 3 ? "pointer-events-none opacity-40" : ""} onClick={() => setPage(Math.min(3, page + 1))} /></PaginationItem></PaginationContent></Pagination></Demo>
           </Section>
 
-          <Section id="feedback" number="05" title="反馈与浮层">
+          <Section id="activity" number="05" title="贡献日历">
+            <div className="max-w-5xl"><Demo title="Contribution calendar · 年度活动分布"><ContributionCalendar data={contributionData} year={contributionYear} years={[2026, 2025, 2024]} dayDetails={{ "2026-01-01": { title: "研究记录更新", items: ["整理本周检索结果", "补充文档来源引用", "同步研究结论"] } }} onYearChange={setContributionYear} onDayClick={(date, count) => toast.info(`${date} · ${count} 次贡献`)} /></Demo></div>
+          </Section>
+
+          <Section id="feedback" number="06" title="反馈与浮层">
             <div className="grid gap-10 xl:grid-cols-2">
               <Demo title="提示 · 进度 · 骨架屏"><div className="space-y-5"><Alert><CircleHelp className="size-4" /><AlertTitle>同步完成</AlertTitle><AlertDescription>所有知识来源均已更新。</AlertDescription></Alert><div className="flex items-center gap-3"><Progress value={72} className="flex-1" /><span className="text-xs text-muted-foreground">72%</span></div><div className="flex items-center gap-3"><Skeleton className="size-9 rounded-md" /><div className="flex-1 space-y-2"><Skeleton className="h-3 w-2/3" /><Skeleton className="h-3 w-1/2" /></div></div></div></Demo>
               <Demo title="弹窗 · 侧边栏 · 下拉菜单 · 气泡提示"><div className="flex flex-wrap gap-2"><Dialog open={dialogOpen} onOpenChange={setDialogOpen}><DialogTrigger asChild><Button><FilePlus2 />新建文档</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>新建文档</DialogTitle><DialogDescription>为新的知识条目设置标题。</DialogDescription></DialogHeader><Label htmlFor="new-document">文档标题</Label><Input id="new-document" value={documentName} onChange={(event) => setDocumentName(event.target.value)} placeholder="例如：研究摘要" /><DialogFooter><Button disabled={!documentName.trim()} onClick={() => { toast.success("文档已创建", { description: documentName }); setDocumentName(""); setDialogOpen(false); }}>创建</Button></DialogFooter></DialogContent></Dialog><Sheet><SheetTrigger asChild><Button variant="outline"><Menu />详情面板</Button></SheetTrigger><SheetContent><SheetHeader><SheetTitle>文档详情</SheetTitle><SheetDescription>来源与访问权限</SheetDescription></SheetHeader><div className="p-4"><MetadataPanel fields={[{ label: "创建者", value: "Y. Lin" }, { label: "状态", value: "已同步" }]} /></div></SheetContent></Sheet><DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline"><Settings2 />操作<ChevronDown /></Button></DropdownMenuTrigger><DropdownMenuContent><DropdownMenuLabel>工作空间</DropdownMenuLabel><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => toast.success("已保存设置")}><Check />保存设置</DropdownMenuItem><DropdownMenuItem onSelect={() => toast.info("已发送提醒")}><Bell />发送提醒</DropdownMenuItem></DropdownMenuContent></DropdownMenu><Popover><PopoverTrigger asChild><Button variant="ghost"><Filter />快速筛选</Button></PopoverTrigger><PopoverContent className="w-60"><p className="mb-3 text-sm font-medium">筛选条件</p><TagPicker tags={["检索", "AI", "产品"]} selected={tags} onChange={setTags} /></PopoverContent></Popover><Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" aria-label="帮助"><CircleHelp /></Button></TooltipTrigger><TooltipContent>组件使用帮助</TooltipContent></Tooltip></div></Demo>
